@@ -10,9 +10,22 @@ Manage Alibaba Cloud Firewall access control policies (访问控制策略/规则
 ## Prerequisites
 
 - Access to the Alibaba Cloud OpenAPI MCP server tools: `mcp__openapi_mcp_core__AlibabaCloud___CallCLI` (execute), `mcp__openapi_mcp_core__AlibabaCloud___SearchApis` (discover), `mcp__openapi_mcp_core__AlibabaCloud___GetApiDefinition` (inspect params).
-- Alibaba Cloud CLI credentials configured for the `cloudfw` product (regionless, product code `cloudfw`, API version `2017-12-07`).
+- An Alibaba Cloud account with Cloud Firewall (`cloudfw`, API version `2017-12-07`) permissions, authorized via OAuth to the OpenAPI MCP server.
 
 If you are unsure of an exact API or parameter, use `SearchApis` first to confirm, then `GetApiDefinition` to check required/optional parameters before calling. Do not guess required parameters.
+
+## Execution model — commands run on Alibaba Cloud, NOT locally
+
+**Important: `aliyun` CLI is NOT installed on the local machine.** Do not run `aliyun ...` in a local shell or assume it executes locally.
+
+The `CallCLI` tool sends the `aliyun cloudfw ...` command string over HTTPS to **Alibaba Cloud's hosted OpenAPI MCP server** (`https://openapi-mcp.cn-hangzhou.aliyuncs.com/...`). That remote server executes the command with its own `aliyun` CLI and the account credentials you authorized via OAuth, then returns the JSON result over HTTPS.
+
+Flow: local Pi → HTTPS + OAuth → Alibaba Cloud hosted MCP server → executes `aliyun cloudfw ...` in the cloud → JSON back to Pi.
+
+Consequences:
+- The command string you pass to `CallCLI` is what matters; the `aliyun` binary never needs to exist locally.
+- The credentials are those of the Alibaba Cloud account bound to the MCP OAuth session, so operations act on that account.
+- If a command fails with an MCP-level error (e.g. `unknown flag`), inspect via `GetApiDefinition` or `aliyun cloudfw <api> --help` (the `--help` request also goes through the remote server), then correct the call.
 
 ## Bundled scripts
 

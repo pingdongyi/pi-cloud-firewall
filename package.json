@@ -1,8 +1,14 @@
 {
   "name": "pi-cloud-firewall",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pi skill to query, enable, and disable Alibaba Cloud Firewall (云防火墙) access control rules.",
-  "keywords": ["pi-package", "pi-skill", "cloud-firewall", "alibaba-cloud", "firewall"],
+  "keywords": [
+    "pi-package",
+    "pi-skill",
+    "cloud-firewall",
+    "alibaba-cloud",
+    "firewall"
+  ],
   "license": "MIT",
   "author": "Pingdong Yi <pingdongyi@gmail.com>",
   "repository": {
@@ -10,6 +16,8 @@
     "url": "https://github.com/pingdongyi/pi-cloud-firewall.git"
   },
   "pi": {
-    "skills": ["./skills"]
+    "skills": [
+      "./skills"
+    ]
   }
 }

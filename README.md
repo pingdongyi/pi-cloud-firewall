@@ -50,9 +50,11 @@ Enable/disable is done via the `Release` parameter (`true` = enabled, `false` = 
 
 ## Requirements
 
-- Pi with the [Alibaba Cloud OpenAPI MCP server](https://github.com/aliyun/alibabacloud-openapi-mcp-server) configured.
-- Alibaba Cloud credentials with Cloud Firewall (`cloudfw`) permissions.
+- Pi with the [Alibaba Cloud OpenAPI MCP server](https://github.com/aliyun/alibabacloud-openapi-mcp-server) configured (this is Alibaba Cloud's hosted MCP endpoint, `https://openapi-mcp.cn-hangzhou.aliyuncs.com/...`).
+- Alibaba Cloud account with Cloud Firewall (`cloudfw`) permissions, authorized to the MCP server via OAuth.
 - `node` for the bundled scripts (no external dependencies).
+
+> **The `aliyun` CLI is NOT installed on the local machine.** The `CallCLI` tool sends the command string over HTTPS to the Alibaba Cloud-hosted MCP server, which executes it in the cloud with the credentials of the authorized account. Never assume `aliyun ...` runs locally.
 
 ## License
 
