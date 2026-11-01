@@ -1,2 +1,50 @@
 # pi-cloud-firewall
-Pi skill to query, enable, and disable Alibaba Cloud Firewall (云防火墙) access control rules.
+
+A [Pi](https://pi.dev) skill to manage **Alibaba Cloud Firewall (云防火墙)** access control rules: **query**, **enable**, and **disable**.
+
+Install from Git:
+
+```bash
+pi install git:github.com/pingdongyi/pi-cloud-firewall@v1
+```
+
+Or locally:
+
+```bash
+pi install ./cloud-firewall-skill
+```
+
+Then load the skill in a session:
+
+```
+/skill:cloud-firewall
+```
+
+## What it does
+
+Covers the three Alibaba Cloud Firewall types:
+
+| Type | Query API | Enable/Disable API |
+|---|---|---|
+| Internet Firewall (互联网边界防火墙) | `DescribeControlPolicy` | `ModifyControlPolicy` |
+| VPC Firewall (VPC边界防火墙) | `DescribeVpcFirewallControlPolicy` | `ModifyVpcFirewallControlPolicy` |
+| NAT Firewall (NAT边界防火墙) | `DescribeNatFirewallControlPolicy` | `ModifyNatFirewallControlPolicy` |
+
+Enable/disable is done via the `Release` parameter (`true` = enabled, `false` = disabled) with the rule's `AclUuid`.
+
+## Bundled scripts
+
+| Script | Purpose |
+|---|---|
+| `scripts/build-command.mjs` | Generate a correct `aliyun cloudfw ...` command (right kebab-case flags, required pagination defaults) to feed into the `CallCLI` tool. |
+| `scripts/format-rules.mjs` | Render a `Describe*ControlPolicy` / `*AclGroupList` JSON response into a readable table, with `--action`/`--state`/`--proto`/`--direction` filters. |
+
+## Requirements
+
+- Pi with the [Alibaba Cloud OpenAPI MCP server](https://github.com/aliyun/alibabacloud-openapi-mcp-server) configured.
+- Alibaba Cloud credentials with Cloud Firewall (`cloudfw`) permissions.
+- `node` for the bundled scripts (no external dependencies).
+
+## License
+
+MIT
