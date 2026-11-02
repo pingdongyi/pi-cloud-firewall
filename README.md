@@ -3,7 +3,7 @@
 # pi-cloud-firewall
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.0.1-blue.svg)
 [![GitHub stars](https://img.shields.io/github/stars/pingdongyi/pi-cloud-firewall.svg)](https://github.com/pingdongyi/pi-cloud-firewall)
 [![GitHub issues](https://img.shields.io/github/issues/pingdongyi/pi-cloud-firewall.svg)](https://github.com/pingdongyi/pi-cloud-firewall)
 
