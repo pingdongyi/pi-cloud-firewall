@@ -7,23 +7,49 @@ description: Query, enable, and disable Alibaba Cloud Firewall (云防火墙) ac
 
 Manage Alibaba Cloud Firewall access control policies (访问控制策略/规则). This skill covers **querying**, **enabling**, and **disabling** rules across the three Cloud Firewall types.
 
-## Prerequisites
+## MCP tools — how this skill actually executes
 
-- Access to the Alibaba Cloud OpenAPI MCP server tools: `mcp__openapi_mcp_core__AlibabaCloud___CallCLI` (execute), `mcp__openapi_mcp_core__AlibabaCloud___SearchApis` (discover), `mcp__openapi_mcp_core__AlibabaCloud___GetApiDefinition` (inspect params).
+This skill is **thin**: every `aliyun cloudfw ...` command shown below is **not** run in a local shell. It is passed as the `command` string to the Alibaba Cloud OpenAPI MCP server via the `CallCLI` tool, which executes it remotely.
+
+The MCP server namespace is `mcp__openapi_mcp_core`; the full qualified tool names are:
+
+| Full tool name | Role in this skill |
+|---|---|
+| `mcp__openapi_mcp_core__AlibabaCloud___CallCLI` | **Primary executor.** Takes `{ command: "aliyun cloudfw ..." }` and runs it in the cloud. This is where every command in this document goes. |
+| `mcp__openapi_mcp_core__AlibabaCloud___SearchApis` | Fallback discovery. Use when you are unsure of the exact API/product/operation; returns up to 10 API suggestions. |
+| `mcp__openapi_mcp_core__AlibabaCloud___GetApiDefinition` | Inspect a specific API's required/optional parameters before calling. Call with `{ product: "Cloudfw", apiVersion: "2017-12-07", apiName: "..." }`. |
+| `mcp__openapi_mcp_core__AlibabaCloud___GenerateCLICommand` | **Alternative to `build-command.mjs`.** Builds a ready-to-run `aliyun cloudfw ...` command from structured `jsonApiParameters`, then feed that into `CallCLI`. |
+| `mcp__openapi_mcp_core__AlibabaCloud___ListApis` | List all Cloudfw operations (`product: "Cloudfw"`). Useful to confirm an operation name exists. |
+
+**Calling convention** — every command in the rest of this doc is executed like this:
+
+```
+CallCLI({ command: "aliyun cloudfw describe-control-policy --current-page 1 --page-size 100 --direction in" })
+```
+
+The `command` string is the only thing that matters; there is no local `aliyun` binary. The response comes back as JSON (the `content[].text` / `structuredContent` field of the tool result).
+
+**Preflight rules:**
+- If unsure of an exact API/operation name → `SearchApis` or `ListApis` first.
+- If unsure of required/optional parameters → `GetApiDefinition` (product `Cloudfw`, version `2017-12-07`) before calling.
+- Never guess required parameters.
+- `GenerateCLICommand` is preferred over hand-writing a long command, since it validates parameter names against the API definition.
+
+### Prerequisites
+
+- The Alibaba Cloud OpenAPI MCP server must be configured and available as the `mcp__openapi_mcp_core` namespace (see the MCP tools table above).
 - An Alibaba Cloud account with Cloud Firewall (`cloudfw`, API version `2017-12-07`) permissions, authorized via OAuth to the OpenAPI MCP server.
 
-If you are unsure of an exact API or parameter, use `SearchApis` first to confirm, then `GetApiDefinition` to check required/optional parameters before calling. Do not guess required parameters.
-
-## Execution model — commands run on Alibaba Cloud, NOT locally
+### Execution model — commands run on Alibaba Cloud, NOT locally
 
 **Important: `aliyun` CLI is NOT installed on the local machine.** Do not run `aliyun ...` in a local shell or assume it executes locally.
 
 The `CallCLI` tool sends the `aliyun cloudfw ...` command string over HTTPS to **Alibaba Cloud's hosted OpenAPI MCP server** (`https://openapi-mcp.cn-hangzhou.aliyuncs.com/...`). That remote server executes the command with its own `aliyun` CLI and the account credentials you authorized via OAuth, then returns the JSON result over HTTPS.
 
-Flow: local Pi → HTTPS + OAuth → Alibaba Cloud hosted MCP server → executes `aliyun cloudfw ...` in the cloud → JSON back to Pi.
+Flow: local Pi → `CallCLI({ command })` → HTTPS + OAuth → Alibaba Cloud hosted MCP server → executes `aliyun cloudfw ...` in the cloud → JSON back to Pi.
 
 Consequences:
-- The command string you pass to `CallCLI` is what matters; the `aliyun` binary never needs to exist locally.
+- The `command` string you pass to `CallCLI` is what matters; the `aliyun` binary never needs to exist locally.
 - The credentials are those of the Alibaba Cloud account bound to the MCP OAuth session, so operations act on that account.
 - If a command fails with an MCP-level error (e.g. `unknown flag`), inspect via `GetApiDefinition` or `aliyun cloudfw <api> --help` (the `--help` request also goes through the remote server), then correct the call.
 
@@ -33,19 +59,21 @@ Scripts live in `scripts/` (run them relative to this skill directory):
 
 | Script | Purpose |
 |---|---|
-| `scripts/build-command.mjs` | Generate a correct `aliyun cloudfw ...` command string (right kebab-case flags, adds required pagination defaults). Feed the printed command into the `CallCLI` tool. |
+| `scripts/build-command.mjs` | Generate a correct `aliyun cloudfw ...` command string (right kebab-case flags, adds required pagination defaults). **Feed the printed command into the `CallCLI` tool** — it does not execute anything itself. |
 | `scripts/format-rules.mjs` | Render a `Describe*ControlPolicy` / `*AclGroupList` JSON response into a readable table. Supports `--action`, `--state`, `--proto`, `--direction` filters and `--json`. |
 
 Example pipeline (generate → execute → format):
 
 ```bash
 node scripts/build-command.mjs list --direction in      # -> prints the aliyun command
-# pass that command to CallCLI, save the JSON response to a file, then:
+# pass that command to CallCLI({ command: <printed> }), save the JSON response to a file, then:
 node scripts/format-rules.mjs response.json
 # or pipe:  cat response.json | node scripts/format-rules.mjs --action drop
 ```
 
 A sample response is in `tests/fixture-in.json` (use it to test the formatter: `node scripts/format-rules.mjs tests/fixture-in.json`).
+
+> Note: `build-command.mjs` and `GenerateCLICommand` are two ways to build the same command. Use `build-command.mjs` when you want a quick flag-based command; use `GenerateCLICommand` when you want the tool to validate parameter names against the API definition.
 
 ## Firewall types
 
